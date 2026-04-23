@@ -1,0 +1,1024 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Popstart — The Balance Sheet</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0F1A2B;
+    --bg-2: #16243A;
+    --panel: #FFFFFF;
+    --panel-2: #F7F9FC;
+    --ink: #0F1A2B;
+    --ink-soft: #4A5A72;
+    --ink-mute: #8896AB;
+    --line: #E4E9F0;
+    --brand: #1F4E79;
+    --brand-2: #2E75B6;
+    --accent: #F4B860;       /* warm gold */
+    --good: #2E8B57;
+    --warn: #D9822B;
+    --bad:  #C24B4B;
+    --user-bubble: #1F4E79;
+    --agent-bubble: #F2F5FA;
+    --shadow: 0 1px 2px rgba(15,26,43,0.06), 0 8px 24px rgba(15,26,43,0.08);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; height: 100%; background: var(--bg);
+    font-family: 'Inter', system-ui, sans-serif; color: var(--ink); }
+
+  /* -------- App shell -------- */
+  .app {
+    height: 100vh;
+    display: grid;
+    grid-template-columns: 280px 1fr 380px;
+    background: var(--bg);
+  }
+
+  /* -------- Sidebar -------- */
+  .sidebar {
+    background: var(--bg);
+    color: #E4E9F0;
+    padding: 22px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    border-right: 1px solid rgba(255,255,255,0.06);
+  }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+  .brand-logo {
+    width: 32px; height: 32px; border-radius: 8px;
+    background: linear-gradient(135deg, var(--brand-2), var(--accent));
+    display: grid; place-items: center;
+    font-family: 'Fraunces', serif; font-weight: 700;
+    color: white; font-size: 18px;
+  }
+  .brand-name { font-family: 'Fraunces', serif; font-weight: 700; font-size: 20px; letter-spacing: -0.01em; }
+
+  .agent-meta {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px;
+    padding: 14px;
+  }
+  .agent-meta .label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--ink-mute); margin-bottom: 6px; }
+  .agent-meta .name { font-family: 'Fraunces', serif; font-size: 18px; font-weight: 700; color: white; }
+  .agent-meta .module { font-size: 12px; color: #98A6BC; margin-top: 4px; }
+
+  .nav-section { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--ink-mute); margin: 12px 0 6px; padding: 0 4px; }
+  .nav-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 9px 12px; border-radius: 8px; font-size: 13px;
+    color: #C8D2E2; cursor: pointer;
+    transition: background 0.15s;
+  }
+  .nav-item:hover { background: rgba(255,255,255,0.04); }
+  .nav-item.active { background: rgba(46,117,182,0.18); color: white; }
+  .nav-item .badge {
+    font-size: 10px; padding: 2px 7px; border-radius: 99px;
+    background: var(--accent); color: var(--bg); font-weight: 600;
+  }
+
+  .pace-pill {
+    margin-top: auto;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px;
+    padding: 12px;
+  }
+  .pace-pill .label { font-size: 11px; text-transform: uppercase;
+    letter-spacing: 0.08em; color: var(--ink-mute); margin-bottom: 8px; }
+  .pace-options { display: flex; gap: 6px; }
+  .pace-options button {
+    flex: 1; background: transparent; border: 1px solid rgba(255,255,255,0.12);
+    color: #C8D2E2; padding: 6px 4px; border-radius: 6px;
+    font-size: 12px; cursor: pointer; font-family: inherit;
+    transition: all 0.15s;
+  }
+  .pace-options button.active { background: var(--brand-2); border-color: var(--brand-2); color: white; }
+  .pace-options button:hover:not(.active) { background: rgba(255,255,255,0.06); }
+
+  /* -------- Chat -------- */
+  .chat {
+    background: var(--panel);
+    display: flex; flex-direction: column;
+    overflow: hidden;
+  }
+  .chat-header {
+    padding: 18px 28px;
+    border-bottom: 1px solid var(--line);
+    display: flex; justify-content: space-between; align-items: center;
+    background: white;
+  }
+  .chat-header .title { font-family: 'Fraunces', serif; font-size: 22px; font-weight: 700; }
+  .chat-header .subtitle { font-size: 13px; color: var(--ink-soft); margin-top: 2px; }
+  .chat-header .meta {
+    display: flex; gap: 10px; align-items: center;
+    font-size: 12px; color: var(--ink-mute);
+  }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--good); }
+
+  .messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 28px 28px 16px;
+    display: flex; flex-direction: column; gap: 18px;
+    background: var(--panel-2);
+  }
+
+  .msg { max-width: 78%; display: flex; flex-direction: column; gap: 6px; }
+  .msg.agent { align-self: flex-start; }
+  .msg.user { align-self: flex-end; align-items: flex-end; }
+  .msg-bubble {
+    padding: 14px 18px; border-radius: 16px;
+    font-size: 14.5px; line-height: 1.55;
+  }
+  .msg.agent .msg-bubble {
+    background: var(--agent-bubble);
+    color: var(--ink);
+    border-top-left-radius: 4px;
+  }
+  .msg.user .msg-bubble {
+    background: var(--user-bubble);
+    color: white;
+    border-top-right-radius: 4px;
+  }
+  .msg-meta {
+    font-size: 11px; color: var(--ink-mute);
+    padding: 0 6px;
+  }
+  .msg em { font-style: italic; color: var(--ink-soft); }
+
+  /* Inline input prompt inside agent message */
+  .inline-input {
+    margin-top: 10px;
+    background: white;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 14px;
+  }
+  .inline-input .iq { font-size: 13px; font-weight: 600; margin-bottom: 10px; color: var(--ink); }
+  .field-row { display: grid; grid-template-columns: 1fr 140px; gap: 10px; align-items: center;
+    padding: 8px 0; border-bottom: 1px dashed var(--line); }
+  .field-row:last-child { border-bottom: none; }
+  .field-row label { font-size: 13px; color: var(--ink-soft); }
+  .field-row .input-wrap {
+    position: relative;
+  }
+  .field-row .input-wrap::before {
+    content: '$';
+    position: absolute;
+    left: 10px; top: 50%; transform: translateY(-50%);
+    color: var(--ink-mute); font-size: 13px;
+  }
+  .field-row input[type="number"], .field-row input[type="text"] {
+    width: 100%; padding: 7px 10px 7px 22px;
+    border: 1px solid var(--line); border-radius: 6px;
+    font-family: 'JetBrains Mono', monospace; font-size: 13px;
+    text-align: right; color: var(--ink);
+  }
+  .field-row input:focus { outline: none; border-color: var(--brand-2); }
+  .field-row.text-only .input-wrap::before { content: ''; }
+  .field-row.text-only input { padding-left: 10px; text-align: left; font-family: inherit; }
+
+  .inline-input select {
+    width: 100%; padding: 9px 12px;
+    border: 1px solid var(--line); border-radius: 8px;
+    font-family: inherit; font-size: 13px; color: var(--ink);
+    background: white;
+  }
+
+  .submit-btn {
+    margin-top: 12px;
+    background: var(--brand);
+    color: white; border: none;
+    padding: 10px 18px; border-radius: 8px;
+    font-family: inherit; font-weight: 600; font-size: 13px;
+    cursor: pointer; transition: background 0.15s;
+  }
+  .submit-btn:hover { background: var(--brand-2); }
+  .submit-btn.ghost { background: transparent; color: var(--brand); border: 1px solid var(--brand); margin-left: 6px; }
+  .submit-btn.ghost:hover { background: rgba(31,78,121,0.05); }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .chip {
+    padding: 5px 10px; border-radius: 99px;
+    background: white; border: 1px solid var(--line);
+    font-size: 12px; cursor: pointer;
+    transition: all 0.15s;
+  }
+  .chip:hover { border-color: var(--brand-2); color: var(--brand-2); }
+  .chip.selected { background: var(--brand); color: white; border-color: var(--brand); }
+
+  /* Composer */
+  .composer {
+    border-top: 1px solid var(--line);
+    padding: 16px 28px 20px;
+    background: white;
+  }
+  .composer-row {
+    display: flex; gap: 10px; align-items: flex-end;
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 10px 12px;
+  }
+  .composer textarea {
+    flex: 1; border: none; background: transparent;
+    resize: none; font-family: inherit; font-size: 14.5px;
+    color: var(--ink); outline: none; padding: 6px 4px;
+    min-height: 22px; max-height: 120px;
+  }
+  .send-btn {
+    background: var(--brand); color: white; border: none;
+    width: 36px; height: 36px; border-radius: 8px;
+    cursor: pointer; display: grid; place-items: center;
+    transition: background 0.15s;
+  }
+  .send-btn:hover { background: var(--brand-2); }
+
+  .composer-foot {
+    display: flex; justify-content: space-between;
+    margin-top: 8px;
+    font-size: 11px; color: var(--ink-mute);
+  }
+
+  /* -------- Carousel sidebar -------- */
+  .carousel-panel {
+    background: var(--panel-2);
+    border-left: 1px solid var(--line);
+    padding: 22px 20px;
+    overflow-y: auto;
+  }
+  .carousel-head {
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin-bottom: 16px;
+  }
+  .carousel-head h3 {
+    font-family: 'Fraunces', serif; font-weight: 700;
+    margin: 0; font-size: 18px; color: var(--ink);
+  }
+  .carousel-head .progress {
+    font-size: 11px; color: var(--ink-mute);
+    text-transform: uppercase; letter-spacing: 0.08em;
+  }
+
+  .deliverable-banner {
+    background: linear-gradient(135deg, var(--brand), var(--brand-2));
+    color: white; padding: 14px 16px; border-radius: 12px;
+    margin-bottom: 16px;
+  }
+  .deliverable-banner .label { font-size: 10px; text-transform: uppercase;
+    letter-spacing: 0.1em; opacity: 0.8; }
+  .deliverable-banner .name { font-family: 'Fraunces', serif; font-weight: 700;
+    font-size: 16px; margin-top: 4px; }
+  .deliverable-banner .desc { font-size: 12px; margin-top: 6px; opacity: 0.9; line-height: 1.45; }
+
+  .card {
+    background: white;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 12px;
+    transition: all 0.2s;
+  }
+  .card.placeholder { background: var(--panel-2); border-style: dashed; opacity: 0.7; }
+  .card.populated { box-shadow: var(--shadow); }
+  .card-head {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 8px;
+  }
+  .card-head .title { font-size: 13px; font-weight: 700; color: var(--ink); }
+  .card-head .num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; color: var(--ink-mute);
+    background: var(--panel-2); padding: 2px 6px; border-radius: 4px;
+  }
+  .card-body { font-size: 12.5px; color: var(--ink-soft); line-height: 1.5; }
+  .card.placeholder .card-body { font-style: italic; color: var(--ink-mute); }
+
+  .line { display: flex; justify-content: space-between; padding: 4px 0;
+    font-size: 12.5px; border-bottom: 1px dashed var(--line); }
+  .line:last-child { border-bottom: none; }
+  .line .label { color: var(--ink-soft); }
+  .line .value { font-family: 'JetBrains Mono', monospace; color: var(--ink); }
+  .line .value.estimate { color: var(--warn); }
+  .line .value.estimate::after { content: ' ⓘ'; font-size: 10px; }
+  .line.total { font-weight: 700; border-top: 2px solid var(--ink); border-bottom: none;
+    padding-top: 8px; margin-top: 4px; }
+  .line.total .label, .line.total .value { color: var(--ink); }
+
+  .signal-card {
+    text-align: center; padding: 18px 14px;
+  }
+  .signal-badge {
+    display: inline-block;
+    padding: 6px 14px; border-radius: 99px;
+    font-size: 12px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.06em;
+  }
+  .signal-badge.strong { background: rgba(46,139,87,0.12); color: var(--good); }
+  .signal-badge.developing { background: rgba(217,130,43,0.12); color: var(--warn); }
+  .signal-badge.attention { background: rgba(194,75,75,0.12); color: var(--bad); }
+  .signal-explain { font-size: 12px; color: var(--ink-soft); margin-top: 8px; line-height: 1.5; }
+
+  .legend {
+    margin-top: 16px;
+    font-size: 11px; color: var(--ink-mute);
+    display: flex; align-items: center; gap: 6px;
+  }
+  .legend-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--warn); }
+
+  /* Mobile */
+  @media (max-width: 1100px) {
+    .app { grid-template-columns: 1fr; }
+    .sidebar, .carousel-panel { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ============== SIDEBAR ============== -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-logo">P</div>
+      <div class="brand-name">Popstart</div>
+    </div>
+
+    <div class="agent-meta">
+      <div class="label">Active Agent</div>
+      <div class="name">The Balance Sheet</div>
+      <div class="module">Module 4 — Finance</div>
+    </div>
+
+    <div>
+      <div class="nav-section">Your Plan</div>
+      <div class="nav-item active">
+        <span>Balance Sheet</span>
+        <span class="badge">In progress</span>
+      </div>
+      <div class="nav-item"><span>Income Statement</span></div>
+      <div class="nav-item"><span>Cash Flow Forecast</span></div>
+      <div class="nav-item"><span>Working Capital</span></div>
+    </div>
+
+    <div>
+      <div class="nav-section">Recommended Next</div>
+      <div class="nav-item"><span>Income Statement</span></div>
+      <div class="nav-item"><span>Funding Strategy</span></div>
+    </div>
+
+    <div class="pace-pill">
+      <div class="label">Session Pace</div>
+      <div class="pace-options">
+        <button data-pace="quick">Quick</button>
+        <button data-pace="standard" class="active">Standard</button>
+        <button data-pace="deep">Deep</button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ============== CHAT ============== -->
+  <main class="chat">
+    <div class="chat-header">
+      <div>
+        <div class="title">The Balance Sheet</div>
+        <div class="subtitle">Build a real snapshot of your financial position in ~10 minutes.</div>
+      </div>
+      <div class="meta">
+        <div class="status-dot"></div>
+        Standard mode · 0/14 inputs
+      </div>
+    </div>
+
+    <div class="messages" id="messages">
+      <!-- Messages will be injected here by JS -->
+    </div>
+
+    <div class="composer">
+      <div class="composer-row">
+        <textarea id="composer-input" placeholder="Ask a question or add context..." rows="1"></textarea>
+        <button class="send-btn" id="send-btn" aria-label="Send">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="22" y1="2" x2="11" y2="13"></line>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+          </svg>
+        </button>
+      </div>
+      <div class="composer-foot">
+        <span>Plain English. One question at a time. Skip any field — we'll fill it from industry benchmarks.</span>
+        <span>50 / 60 thread cap</span>
+      </div>
+    </div>
+  </main>
+
+  <!-- ============== CAROUSEL PANEL ============== -->
+  <aside class="carousel-panel">
+    <div class="carousel-head">
+      <h3>Your Snapshot</h3>
+      <span class="progress" id="progress-label">Building...</span>
+    </div>
+
+    <div class="deliverable-banner">
+      <div class="label">You'll Leave With</div>
+      <div class="name">Balance Sheet Snapshot</div>
+      <div class="desc">A one-page formatted balance sheet, your owner's equity calculation, a position signal, and a benchmark comparison — exportable as PDF.</div>
+    </div>
+
+    <!-- Card 1: Assets -->
+    <div class="card placeholder" id="card-assets">
+      <div class="card-head">
+        <div class="title">Assets</div>
+        <div class="num">CARD 1</div>
+      </div>
+      <div class="card-body">Your assets will be itemized here once we walk through what your business has.</div>
+    </div>
+
+    <!-- Card 2: Liabilities -->
+    <div class="card placeholder" id="card-liabilities">
+      <div class="card-head">
+        <div class="title">Liabilities</div>
+        <div class="num">CARD 2</div>
+      </div>
+      <div class="card-body">Your liabilities will be laid out here once we cover what your business owes.</div>
+    </div>
+
+    <!-- Card 3: Owner's Equity -->
+    <div class="card placeholder" id="card-equity">
+      <div class="card-head">
+        <div class="title">Owner's Equity</div>
+        <div class="num">CARD 3</div>
+      </div>
+      <div class="card-body">Your owner's equity will be calculated here once we know what's been put in.</div>
+    </div>
+
+    <!-- Card 4: Position Signal -->
+    <div class="card placeholder" id="card-signal">
+      <div class="card-head">
+        <div class="title">Position Signal</div>
+        <div class="num">CARD 4</div>
+      </div>
+      <div class="card-body">Your position signal will appear here once we have the full picture.</div>
+    </div>
+
+    <div class="legend" id="legend" style="display:none;">
+      <span class="legend-dot"></span>
+      <span>Industry Estimate — replace with real numbers when you have them.</span>
+    </div>
+  </aside>
+
+</div>
+
+<script>
+// ============================================================
+// THE BALANCE SHEET — Demo Conversation Logic
+// MVP demonstration of agent flow per ADD v1.0
+// ============================================================
+
+const state = {
+  pace: 'standard',
+  step: 0,
+  inputs: {
+    // assets
+    ca_cash: null, ca_inventory: null, ca_equipment: null,
+    ca_receivables: null, ca_other: null,
+    // current liabilities
+    cl_bills: null, cl_short_loans: null, cl_credit_cards: null, cl_other: null,
+    // long-term liabilities
+    ll_long_loans: null, ll_equipment_fin: null, ll_other: null,
+    // owner contributions
+    owner_capital: null,
+    // industry
+    industry: null,
+  },
+  estimates: {}, // tracks which fields were benchmark-filled
+  // pre-flight from profile
+  profile: {
+    business_stage: 'Pre-Launch',
+    industry: 'Food & Beverage',
+    business_type: 'product',
+  },
+};
+
+// Industry benchmark library (placeholder values for demo)
+const benchmarks = {
+  'Food & Beverage': {
+    ca_cash: 8500, ca_inventory: 12000, ca_equipment: 18000,
+    ca_receivables: 3200, ca_other: 0,
+    cl_bills: 4500, cl_short_loans: 6000, cl_credit_cards: 2800, cl_other: 0,
+    ll_long_loans: 22000, ll_equipment_fin: 8000, ll_other: 0,
+    owner_capital: 25000,
+  },
+};
+
+const messagesEl = document.getElementById('messages');
+const composerInput = document.getElementById('composer-input');
+const sendBtn = document.getElementById('send-btn');
+const progressLabel = document.getElementById('progress-label');
+
+// ---------- Render helpers ----------
+function addAgentMessage(htmlContent, opts = {}) {
+  const wrap = document.createElement('div');
+  wrap.className = 'msg agent';
+  wrap.innerHTML = `
+    <div class="msg-bubble">${htmlContent}</div>
+    ${opts.meta ? `<div class="msg-meta">${opts.meta}</div>` : ''}
+  `;
+  messagesEl.appendChild(wrap);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+  return wrap;
+}
+
+function addUserMessage(text) {
+  const wrap = document.createElement('div');
+  wrap.className = 'msg user';
+  wrap.innerHTML = `<div class="msg-bubble">${escapeHtml(text)}</div>`;
+  messagesEl.appendChild(wrap);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
+function escapeHtml(str) {
+  return String(str).replace(/[&<>"']/g, c => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[c]));
+}
+
+function fmt(n) {
+  if (n === null || n === undefined) return '—';
+  return '$' + Number(n).toLocaleString();
+}
+
+// ---------- Conversation flow ----------
+function startSession() {
+  // Opening message — varies by business_stage
+  const stageOpening = {
+    'Thinking About It': "You're still in the exploration stage, so we'll use industry benchmarks to build a projected balance sheet. Think of it as a preview of what you'll be tracking once you launch.",
+    'Pre-Launch': "You're pre-launch, so we'll work with projected numbers. Enter what you have — even rough estimates — and I'll fill in the gaps with industry benchmarks.",
+    'Existing Business': "You're up and running. Let's pull in your real numbers and get a clear picture of where you stand right now.",
+  };
+
+  addAgentMessage(`
+    <strong>Hi — I'm The Balance Sheet agent.</strong> I'll help you build a one-page snapshot of your financial position: what your business owns, what it owes, and what's left for you. Should take about 10 minutes.
+    <br><br>
+    I can see from your profile you're in <strong>${state.profile.business_stage}</strong> stage, in the <strong>${state.profile.industry}</strong> industry. Sound right?
+    <br><br>
+    <em>${stageOpening[state.profile.business_stage]}</em>
+  `, { meta: 'Pre-flight context loaded' });
+
+  setTimeout(() => promptAssets(), 400);
+}
+
+// Step 1: Current Assets
+function promptAssets() {
+  addAgentMessage(`
+    Let's start with <strong>current assets</strong> — what your business owns right now. Skip any line you don't have a number for, I'll fill it from industry benchmarks.
+    <div class="inline-input">
+      <div class="iq">Current Assets</div>
+      <div class="field-row">
+        <label>Cash on hand / in accounts</label>
+        <div class="input-wrap"><input type="number" id="in-ca_cash" placeholder="0"></div>
+      </div>
+      <div class="field-row">
+        <label>Inventory value</label>
+        <div class="input-wrap"><input type="number" id="in-ca_inventory" placeholder="0"></div>
+      </div>
+      <div class="field-row">
+        <label>Equipment value</label>
+        <div class="input-wrap"><input type="number" id="in-ca_equipment" placeholder="0"></div>
+      </div>
+      <div class="field-row">
+        <label>Accounts receivable</label>
+        <div class="input-wrap"><input type="number" id="in-ca_receivables" placeholder="0"></div>
+      </div>
+      <div class="field-row">
+        <label>Other current assets</label>
+        <div class="input-wrap"><input type="number" id="in-ca_other" placeholder="0"></div>
+      </div>
+      <button class="submit-btn" onclick="submitAssets()">Continue</button>
+      <button class="submit-btn ghost" onclick="skipAssets()">Skip — use benchmarks</button>
+    </div>
+  `);
+}
+
+function submitAssets() {
+  const fields = ['ca_cash', 'ca_inventory', 'ca_equipment', 'ca_receivables', 'ca_other'];
+  fields.forEach(f => {
+    const v = document.getElementById('in-' + f).value;
+    if (v === '' || v === null) {
+      state.inputs[f] = benchmarks[state.profile.industry][f];
+      state.estimates[f] = true;
+    } else {
+      state.inputs[f] = Number(v);
+      state.estimates[f] = false;
+    }
+  });
+  addUserMessage('Submitted my current assets.');
+  updateAssetsCard();
+  acknowledgeAndContinue('assets');
+}
+
+function skipAssets() {
+  const fields = ['ca_cash', 'ca_inventory', 'ca_equipment', 'ca_receivables', 'ca_other'];
+  fields.forEach(f => {
+    state.inputs[f] = benchmarks[state.profile.industry][f];
+    state.estimates[f] = true;
+  });
+  addUserMessage('Skip — use benchmarks.');
+  updateAssetsCard();
+  acknowledgeAndContinue('assets');
+}
+
+function acknowledgeAndContinue(section) {
+  const ack = {
+    assets: "Got it. Your assets are taking shape on the right. Now let's cover what you owe.",
+    liabilities: "Okay — liabilities captured. Quick one on owner contributions next.",
+    equity: "That's enough to compute your owner's equity. Last thing — confirming your industry for the benchmark comparison.",
+  };
+  setTimeout(() => {
+    addAgentMessage(ack[section]);
+    if (section === 'assets') setTimeout(promptLiabilities, 400);
+    else if (section === 'liabilities') setTimeout(promptOwnerCapital, 400);
+    else if (section === 'equity') setTimeout(promptIndustryConfirm, 400);
+  }, 350);
+}
+
+// Step 2: Liabilities (current + long-term combined for compactness)
+function promptLiabilities() {
+  addAgentMessage(`
+    Now — <strong>liabilities</strong>, what your business owes. Same rules: skip any line you don't have, I'll benchmark it.
+    <div class="inline-input">
+      <div class="iq">Current Liabilities (due within 12 months)</div>
+      <div class="field-row">
+        <label>Outstanding bills</label>
+        <div class="input-wrap"><input type="number" id="in-cl_bills" placeholder="0"></div>
+      </div>
+      <div class="field-row">
+        <label>Short-term loans</label>
+        <div class="input-wrap"><input type="number" id="in-cl_short_loans" placeholder="0"></div>
+      </div>
+      <div class="field-row">
+        <label>Credit card balances</label>
+        <div class="input-wrap"><input type="number" id="in-cl_credit_cards" placeholder="0"></div>
+      </div>
+      <div class="field-row">
+        <label>Other current liabilities</label>
+        <div class="input-wrap"><input type="number" id="in-cl_other" placeholder="0"></div>
+      </div>
+    </div>
+    <div class="inline-input" style="margin-top:8px;">
+      <div class="iq">Long-Term Liabilities (12+ months out)</div>
+      <div class="field-row">
+        <label>Long-term loans</label>
+        <div class="input-wrap"><input type="number" id="in-ll_long_loans" placeholder="0"></div>
+      </div>
+      <div class="field-row">
+        <label>Equipment financing</label>
+        <div class="input-wrap"><input type="number" id="in-ll_equipment_fin" placeholder="0"></div>
+      </div>
+      <div class="field-row">
+        <label>Other long-term liabilities</label>
+        <div class="input-wrap"><input type="number" id="in-ll_other" placeholder="0"></div>
+      </div>
+      <button class="submit-btn" onclick="submitLiabilities()">Continue</button>
+      <button class="submit-btn ghost" onclick="skipLiabilities()">Skip — use benchmarks</button>
+    </div>
+  `);
+}
+
+function submitLiabilities() {
+  const fields = ['cl_bills','cl_short_loans','cl_credit_cards','cl_other',
+                  'll_long_loans','ll_equipment_fin','ll_other'];
+  fields.forEach(f => {
+    const v = document.getElementById('in-' + f).value;
+    if (v === '' || v === null) {
+      state.inputs[f] = benchmarks[state.profile.industry][f];
+      state.estimates[f] = true;
+    } else {
+      state.inputs[f] = Number(v);
+      state.estimates[f] = false;
+    }
+  });
+  addUserMessage('Submitted my liabilities.');
+  updateLiabilitiesCard();
+  acknowledgeAndContinue('liabilities');
+}
+
+function skipLiabilities() {
+  const fields = ['cl_bills','cl_short_loans','cl_credit_cards','cl_other',
+                  'll_long_loans','ll_equipment_fin','ll_other'];
+  fields.forEach(f => {
+    state.inputs[f] = benchmarks[state.profile.industry][f];
+    state.estimates[f] = true;
+  });
+  addUserMessage('Skip — use benchmarks.');
+  updateLiabilitiesCard();
+  acknowledgeAndContinue('liabilities');
+}
+
+// Step 3: Owner Capital
+function promptOwnerCapital() {
+  addAgentMessage(`
+    Last numerical input — <strong>what you (and any other owners) have put into the business</strong>. This includes cash invested, equipment you bought personally for the business, anything you covered out of pocket.
+    <div class="inline-input">
+      <div class="iq">Owner Contributions</div>
+      <div class="field-row">
+        <label>Total owner capital</label>
+        <div class="input-wrap"><input type="number" id="in-owner_capital" placeholder="0"></div>
+      </div>
+      <button class="submit-btn" onclick="submitOwnerCapital()">Continue</button>
+    </div>
+  `);
+}
+
+function submitOwnerCapital() {
+  const v = document.getElementById('in-owner_capital').value;
+  if (v === '' || v === null) {
+    state.inputs.owner_capital = benchmarks[state.profile.industry].owner_capital;
+    state.estimates.owner_capital = true;
+  } else {
+    state.inputs.owner_capital = Number(v);
+    state.estimates.owner_capital = false;
+  }
+  addUserMessage('Submitted owner capital.');
+  updateEquityCard();
+  acknowledgeAndContinue('equity');
+}
+
+// Step 4: Industry Confirm
+function promptIndustryConfirm() {
+  addAgentMessage(`
+    I have you in <strong>${state.profile.industry}</strong> — using that for benchmark comparison. Want to change it before I generate your snapshot?
+    <div class="inline-input">
+      <div class="iq">Industry</div>
+      <select id="in-industry">
+        <option value="Food & Beverage" selected>Food & Beverage</option>
+        <option value="Retail">Retail</option>
+        <option value="Professional Services">Professional Services</option>
+        <option value="Manufacturing">Manufacturing</option>
+        <option value="Software / SaaS">Software / SaaS</option>
+        <option value="Hospitality">Hospitality</option>
+        <option value="Construction">Construction</option>
+        <option value="Other">Other</option>
+      </select>
+      <button class="submit-btn" onclick="submitIndustry()">Generate my snapshot</button>
+    </div>
+  `);
+}
+
+function submitIndustry() {
+  state.inputs.industry = document.getElementById('in-industry').value;
+  addUserMessage('Industry confirmed: ' + state.inputs.industry);
+  setTimeout(generateDeliverable, 600);
+}
+
+// ---------- Carousel updates ----------
+function updateAssetsCard() {
+  const card = document.getElementById('card-assets');
+  card.classList.remove('placeholder');
+  card.classList.add('populated');
+  const total = ['ca_cash','ca_inventory','ca_equipment','ca_receivables','ca_other']
+    .reduce((s, f) => s + (state.inputs[f] || 0), 0);
+  card.innerHTML = `
+    <div class="card-head">
+      <div class="title">Assets</div>
+      <div class="num">CARD 1</div>
+    </div>
+    <div class="card-body">
+      ${renderLine('Cash', state.inputs.ca_cash, state.estimates.ca_cash)}
+      ${renderLine('Inventory', state.inputs.ca_inventory, state.estimates.ca_inventory)}
+      ${renderLine('Equipment', state.inputs.ca_equipment, state.estimates.ca_equipment)}
+      ${renderLine('Receivables', state.inputs.ca_receivables, state.estimates.ca_receivables)}
+      ${renderLine('Other', state.inputs.ca_other, state.estimates.ca_other)}
+      <div class="line total"><span class="label">Total Assets</span><span class="value">${fmt(total)}</span></div>
+    </div>
+  `;
+  showLegend();
+  updateProgress();
+}
+
+function updateLiabilitiesCard() {
+  const card = document.getElementById('card-liabilities');
+  card.classList.remove('placeholder');
+  card.classList.add('populated');
+  const cl = ['cl_bills','cl_short_loans','cl_credit_cards','cl_other']
+    .reduce((s, f) => s + (state.inputs[f] || 0), 0);
+  const ll = ['ll_long_loans','ll_equipment_fin','ll_other']
+    .reduce((s, f) => s + (state.inputs[f] || 0), 0);
+  card.innerHTML = `
+    <div class="card-head">
+      <div class="title">Liabilities</div>
+      <div class="num">CARD 2</div>
+    </div>
+    <div class="card-body">
+      <div style="font-size:11px; color:var(--ink-mute); margin-bottom:4px; text-transform:uppercase; letter-spacing:0.06em;">Current</div>
+      ${renderLine('Bills', state.inputs.cl_bills, state.estimates.cl_bills)}
+      ${renderLine('Short-term loans', state.inputs.cl_short_loans, state.estimates.cl_short_loans)}
+      ${renderLine('Credit cards', state.inputs.cl_credit_cards, state.estimates.cl_credit_cards)}
+      ${renderLine('Other', state.inputs.cl_other, state.estimates.cl_other)}
+      <div style="font-size:11px; color:var(--ink-mute); margin:8px 0 4px; text-transform:uppercase; letter-spacing:0.06em;">Long-Term</div>
+      ${renderLine('Long-term loans', state.inputs.ll_long_loans, state.estimates.ll_long_loans)}
+      ${renderLine('Equipment financing', state.inputs.ll_equipment_fin, state.estimates.ll_equipment_fin)}
+      ${renderLine('Other', state.inputs.ll_other, state.estimates.ll_other)}
+      <div class="line total"><span class="label">Total Liabilities</span><span class="value">${fmt(cl + ll)}</span></div>
+    </div>
+  `;
+  updateProgress();
+}
+
+function updateEquityCard() {
+  const card = document.getElementById('card-equity');
+  card.classList.remove('placeholder');
+  card.classList.add('populated');
+  const totalAssets = ['ca_cash','ca_inventory','ca_equipment','ca_receivables','ca_other']
+    .reduce((s, f) => s + (state.inputs[f] || 0), 0);
+  const totalLiab = ['cl_bills','cl_short_loans','cl_credit_cards','cl_other',
+                     'll_long_loans','ll_equipment_fin','ll_other']
+    .reduce((s, f) => s + (state.inputs[f] || 0), 0);
+  const equity = totalAssets - totalLiab;
+  card.innerHTML = `
+    <div class="card-head">
+      <div class="title">Owner's Equity</div>
+      <div class="num">CARD 3</div>
+    </div>
+    <div class="card-body">
+      ${renderLine('Owner capital', state.inputs.owner_capital, state.estimates.owner_capital)}
+      <div style="font-size:11px; color:var(--ink-mute); margin:8px 0; padding: 8px; background: var(--panel-2); border-radius: 6px; line-height:1.5;">
+        Assets − Liabilities = ${fmt(totalAssets)} − ${fmt(totalLiab)}
+      </div>
+      <div class="line total"><span class="label">Owner's Equity</span><span class="value" style="color:${equity >= 0 ? 'var(--good)' : 'var(--bad)'}">${fmt(equity)}</span></div>
+    </div>
+  `;
+  updateProgress();
+}
+
+function updatePositionCard() {
+  const card = document.getElementById('card-signal');
+  card.classList.remove('placeholder');
+  card.classList.add('populated');
+  const totalAssets = ['ca_cash','ca_inventory','ca_equipment','ca_receivables','ca_other']
+    .reduce((s, f) => s + (state.inputs[f] || 0), 0);
+  const totalCL = ['cl_bills','cl_short_loans','cl_credit_cards','cl_other']
+    .reduce((s, f) => s + (state.inputs[f] || 0), 0);
+  const totalLiab = totalCL + ['ll_long_loans','ll_equipment_fin','ll_other']
+    .reduce((s, f) => s + (state.inputs[f] || 0), 0);
+  const equity = totalAssets - totalLiab;
+
+  const currentRatio = totalCL > 0 ? (
+    ['ca_cash','ca_inventory','ca_receivables','ca_other']
+      .reduce((s, f) => s + (state.inputs[f] || 0), 0) / totalCL
+  ).toFixed(2) : '∞';
+  const debtToEquity = equity > 0 ? (totalLiab / equity).toFixed(2) : '∞';
+
+  let signal, signalClass, explain;
+  if (equity > 0 && currentRatio !== '∞' && Number(currentRatio) >= 1.5 && Number(debtToEquity) < 1.5) {
+    signal = 'Strong Foundation'; signalClass = 'strong';
+    explain = "Your assets cover your liabilities with healthy margin, and you're not over-leveraged for your stage.";
+  } else if (equity > 0) {
+    signal = 'Developing'; signalClass = 'developing';
+    explain = "You're in positive territory, but there's room to strengthen liquidity or reduce debt as you grow.";
+  } else {
+    signal = 'Needs Attention'; signalClass = 'attention';
+    explain = "Your liabilities currently exceed your assets — common at very early stage, but worth a plan to address.";
+  }
+
+  card.innerHTML = `
+    <div class="card-head">
+      <div class="title">Position Signal</div>
+      <div class="num">CARD 4</div>
+    </div>
+    <div class="card-body signal-card">
+      <div class="signal-badge ${signalClass}">${signal}</div>
+      <div class="signal-explain">${explain}</div>
+      <div style="margin-top:14px; padding-top:12px; border-top:1px dashed var(--line); text-align:left;">
+        <div style="font-size:11px; color:var(--ink-mute); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:6px;">Benchmark Comparison</div>
+        <div class="line"><span class="label">Current Ratio</span><span class="value">${currentRatio} <span style="color:var(--ink-mute);">(industry: 1.8)</span></span></div>
+        <div class="line"><span class="label">Debt-to-Equity</span><span class="value">${debtToEquity} <span style="color:var(--ink-mute);">(industry: 1.2)</span></span></div>
+      </div>
+    </div>
+  `;
+  updateProgress();
+}
+
+function renderLine(label, value, isEstimate) {
+  return `<div class="line">
+    <span class="label">${label}</span>
+    <span class="value ${isEstimate ? 'estimate' : ''}">${fmt(value)}</span>
+  </div>`;
+}
+
+function showLegend() {
+  document.getElementById('legend').style.display = 'flex';
+}
+
+function updateProgress() {
+  const filled = Object.values(state.inputs).filter(v => v !== null).length;
+  progressLabel.textContent = `${filled}/14 inputs`;
+}
+
+// ---------- Generate deliverable + Coach Mode ----------
+function generateDeliverable() {
+  updatePositionCard();
+  addAgentMessage(`
+    <strong>Your Balance Sheet Snapshot is ready.</strong> Take a look at the panel on the right — the four cards together are your snapshot. The Position Signal at the bottom is the headline read.
+    <br><br>
+    Numbers marked with the gold dot are industry estimates, not your actuals. They're a fine starting point — the snapshot becomes much sharper once you swap them for your real numbers.
+    <br><br>
+    Want me to walk you through what any of these mean, or talk about how to strengthen your position? I'll stay available — anytime in this session or future ones.
+  `, { meta: '✓ Deliverable generated · Coach Mode active' });
+  progressLabel.textContent = 'Snapshot ready';
+
+  // Enable composer
+  composerInput.placeholder = "Ask me anything about your snapshot...";
+  composerInput.focus();
+}
+
+// ---------- Composer (free-text Coach Mode) ----------
+sendBtn.addEventListener('click', sendUserMessage);
+composerInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendUserMessage();
+  }
+});
+composerInput.addEventListener('input', () => {
+  composerInput.style.height = 'auto';
+  composerInput.style.height = composerInput.scrollHeight + 'px';
+});
+
+function sendUserMessage() {
+  const text = composerInput.value.trim();
+  if (!text) return;
+  addUserMessage(text);
+  composerInput.value = '';
+  composerInput.style.height = 'auto';
+
+  // Demo: simple keyword-driven coach responses
+  setTimeout(() => coachResponse(text), 500);
+}
+
+function coachResponse(userText) {
+  const lower = userText.toLowerCase();
+  let response;
+
+  if (lower.includes('liab') && (lower.includes('higher') || lower.includes('more') || lower.includes('exceed'))) {
+    response = "If your liabilities outweigh your assets, your owner's equity goes negative. It's not unusual at early stage — especially when there's been a big equipment purchase or upfront investment. The fix is either bringing equity up (more owner capital, retained earnings over time) or paying down debt. Which side feels more workable for you right now?";
+  } else if (lower.includes('lender') || lower.includes('bank')) {
+    response = "Lenders look at three things on a balance sheet: your current ratio (can you cover what's due in the next year?), debt-to-equity (how much of the business is funded by debt vs. ownership?), and trend (is equity growing over time?). Looking at your snapshot, the strongest line is your asset coverage. Worth a closer look before you submit anything.";
+  } else if (lower.includes('estimate') || lower.includes('real number')) {
+    response = "Estimates are fine for orientation — they tell you what 'normal' looks like at your stage. But before you hand this to a lender, investor, or accountant, you'll want to replace them with actuals. Even 15 minutes pulling numbers from your bank balance and credit card statements will sharpen this a lot.";
+  } else if (lower.includes('equity') && (lower.includes('increase') || lower.includes('grow') || lower.includes('improve'))) {
+    response = "Three levers: put more capital in personally, generate profit and reinvest it (retained earnings), or pay down liabilities. Most early-stage businesses lean on the first two — the third comes later, once cash flow is stable. Which path fits your situation?";
+  } else if (lower.includes('current') && lower.includes('long')) {
+    response = "Quick version: anything you have to pay off in the next 12 months is a current liability. Anything beyond that — like a 5-year equipment loan — is long-term. Lenders care about the split because current liabilities tell them whether you can cover what's due now. Long-term tells them about your overall debt load.";
+  } else {
+    response = "Good question. Let me think about that in the context of your specific snapshot — I can see your equity is " +
+      fmt(getEquity()) + " and your current ratio is " + getCurrentRatio() + ". Want to talk about how that affects your situation, or pivot to something else?";
+  }
+
+  addAgentMessage(response);
+}
+
+function getEquity() {
+  const totalAssets = ['ca_cash','ca_inventory','ca_equipment','ca_receivables','ca_other']
+    .reduce((s, f) => s + (state.inputs[f] || 0), 0);
+  const totalLiab = ['cl_bills','cl_short_loans','cl_credit_cards','cl_other',
+                     'll_long_loans','ll_equipment_fin','ll_other']
+    .reduce((s, f) => s + (state.inputs[f] || 0), 0);
+  return totalAssets - totalLiab;
+}
+
+function getCurrentRatio() {
+  const totalCL = ['cl_bills','cl_short_loans','cl_credit_cards','cl_other']
+    .reduce((s, f) => s + (state.inputs[f] || 0), 0);
+  if (totalCL === 0) return '∞';
+  const liquidAssets = ['ca_cash','ca_inventory','ca_receivables','ca_other']
+    .reduce((s, f) => s + (state.inputs[f] || 0), 0);
+  return (liquidAssets / totalCL).toFixed(2);
+}
+
+// ---------- Pace controls ----------
+document.querySelectorAll('.pace-options button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.pace-options button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    state.pace = btn.dataset.pace;
+  });
+});
+
+// ---------- Start ----------
+startSession();
+</script>
+</body>
+</html>
